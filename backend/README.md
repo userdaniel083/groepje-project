@@ -1,3 +1,4 @@
-what this needs to do is just serve a bunch of html files from a directory
+http://localhost:8000/ is the port
 
-so just a basic webserver
+schrijf python -m http.server 8000 -d ..
+
