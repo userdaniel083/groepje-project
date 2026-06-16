@@ -9,6 +9,6 @@
         </div>
         <div
             class="fixed bottom-0 right-0 w-full h-full -z-1 bg-linear-to-br from-transparent from-70% to-green-400/40"
-        ></div>
+        />
     </UApp>
 </template>
