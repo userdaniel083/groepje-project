@@ -1,7 +1,14 @@
+import { fileURLToPath } from "node:url";
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   modules: ["@nuxt/hints", "@nuxt/image", "@nuxt/ui"],
   css: ["~/assets/css/main.css"],
+  runtimeConfig: {
+    sharedFilesDir: fileURLToPath(
+      new URL("./data/shared-files", import.meta.url),
+    ),
+  },
 });
