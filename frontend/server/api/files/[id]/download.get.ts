@@ -1,8 +1,14 @@
-import { createError, defineEventHandler, getRouterParam, sendStream, setHeader } from "h3";
+import {
+  createError,
+  defineEventHandler,
+  getRouterParam,
+  sendStream,
+  setHeader,
+} from "h3";
 import {
   getDownloadDisposition,
   getSharedFile,
-  openSharedFileStream
+  openSharedFileStream,
 } from "../../../utils/shared-files";
 
 export default defineEventHandler(async (event) => {
@@ -14,9 +20,13 @@ export default defineEventHandler(async (event) => {
 
   try {
     const file = await getSharedFile(id);
-    const stream = await openSharedFileStream(id);
+    const stream = await openSharedFileStream(file);
 
-    setHeader(event, "content-type", file.contentType || "application/octet-stream");
+    setHeader(
+      event,
+      "content-type",
+      file.contentType || "application/octet-stream",
+    );
     setHeader(event, "content-length", String(file.size));
     setHeader(event, "content-disposition", getDownloadDisposition(file.name));
 

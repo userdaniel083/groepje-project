@@ -1,7 +1,12 @@
 import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import { join } from "node:path";
-import { randomUUID } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  randomUUID,
+} from "node:crypto";
 import { useRuntimeConfig } from "#imports";
 
 export interface SharedFileRecord {
@@ -10,6 +15,11 @@ export interface SharedFileRecord {
   size: number;
   contentType: string;
   uploadedAt: string;
+  encryption?: {
+    algorithm: "AES-256-GCM";
+    iv: string;
+    authTag: string;
+  };
 }
 
 function getStoragePaths() {
@@ -36,9 +46,47 @@ function getMetaPath(id: string) {
   return join(getStoragePaths().metaDir, `${id}.json`);
 }
 
-export function toSharedFileResponse(record: SharedFileRecord) {
+function getEncryptionKey() {
+  const config = useRuntimeConfig();
+  const rawKey = (config.fileEncryptionKey as string).trim();
+
+  if (!rawKey) {
+    throw new Error(
+      "Missing FILE_ENCRYPTION_KEY. Set it to a 32-byte base64 key before uploading files.",
+    );
+  }
+
+  const key = Buffer.from(rawKey, "base64");
+
+  if (key.length !== 32) {
+    throw new Error(
+      "Invalid FILE_ENCRYPTION_KEY. Use a base64 encoded 32-byte key.",
+    );
+  }
+
+  return key;
+}
+
+function encryptFile(data: Buffer) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", getEncryptionKey(), iv);
+  const encryptedData = Buffer.concat([cipher.update(data), cipher.final()]);
+
   return {
-    ...record,
+    data: encryptedData,
+    encryption: {
+      algorithm: "AES-256-GCM" as const,
+      iv: iv.toString("base64"),
+      authTag: cipher.getAuthTag().toString("base64"),
+    },
+  };
+}
+
+export function toSharedFileResponse(record: SharedFileRecord) {
+  const { encryption: _encryption, ...safeRecord } = record;
+
+  return {
+    ...safeRecord,
     shareUrl: `/download?id=${record.id}`,
     downloadUrl: `/api/files/${record.id}/download`,
   };
@@ -59,7 +107,10 @@ export async function saveSharedFile(file: {
     uploadedAt: new Date().toISOString(),
   };
 
-  await writeFile(getBlobPath(record.id), file.data);
+  const encryptedFile = encryptFile(file.data);
+  record.encryption = encryptedFile.encryption;
+
+  await writeFile(getBlobPath(record.id), encryptedFile.data);
   await writeFile(
     getMetaPath(record.id),
     JSON.stringify(record, null, 2),
@@ -101,9 +152,29 @@ export async function listSharedFiles() {
   );
 }
 
-export async function openSharedFileStream(id: string) {
-  await stat(getBlobPath(id));
-  return createReadStream(getBlobPath(id));
+export async function openSharedFileStream(record: SharedFileRecord) {
+  await stat(getBlobPath(record.id));
+
+  const stream = createReadStream(getBlobPath(record.id));
+
+  if (!record.encryption) {
+    return stream;
+  }
+
+  if (record.encryption.algorithm !== "AES-256-GCM") {
+    throw new Error(
+      `Unsupported encryption algorithm: ${record.encryption.algorithm}`,
+    );
+  }
+
+  const decipher = createDecipheriv(
+    "aes-256-gcm",
+    getEncryptionKey(),
+    Buffer.from(record.encryption.iv, "base64"),
+  );
+  decipher.setAuthTag(Buffer.from(record.encryption.authTag, "base64"));
+
+  return stream.pipe(decipher);
 }
 
 export function getDownloadDisposition(filename: string) {

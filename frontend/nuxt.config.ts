@@ -10,5 +10,9 @@ export default defineNuxtConfig({
     sharedFilesDir: fileURLToPath(
       new URL("./data/shared-files", import.meta.url),
     ),
+    fileEncryptionKey: process.env.FILE_ENCRYPTION_KEY || "",
+    requireHttps:
+      process.env.NUXT_REQUIRE_HTTPS === "true" ||
+      process.env.NODE_ENV === "production",
   },
 });
