@@ -1,12 +1,12 @@
 import http.server
 import socketserver
-
+class myHandler(http.server.SimpleHTTPRequestHandler):
+  def do_GET(self):
+    print("Request received, sending redirect...")
+    self.send_response(301)
+    self.send_header('Location', 'localhost:3000')
+    self.end_headers()
 PORT = 8000
-
-Handler = http.server.SimpleHTTPRequestHandler
-
-
-with socketserver.TCPServer(("", PORT), Handler) as httpd:
-    print(f"Serving at port {PORT}")
-    # Start de server en het stop niet automatisch, zodat het blijft draaien totdat je het handmatig stopt
-    httpd.serve_forever()
+handler = socketserver.TCPServer(("", PORT), myHandler)
+print("serving at port 80")
+handler.serve_forever()
