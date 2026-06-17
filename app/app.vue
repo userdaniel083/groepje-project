@@ -1,5 +1,10 @@
 <template>
     <UApp>
+        <NuxtLink to="/">
+            <div class="fixed left-5 top-5 z-10">
+                <NuxtImg src="/img/logo.svg" class="h-7" />
+            </div>
+        </NuxtLink>
         <div class="flex flex-col justify-center h-full fixed w-full">
             <div
                 class="flex flex-row items-center align-middle justify-center w-full"
