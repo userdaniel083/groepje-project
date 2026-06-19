@@ -29,11 +29,18 @@ function toNodeReadableStream(body: unknown): NodeJS.ReadableStream {
 }
 
 export default defineEventHandler(async (event) => {
-  const id = normalizeFileId(getRouterParam(event, "id"));
+  const rawId = getRouterParam(event, "id");
+  const id = normalizeFileId(rawId);
 
   if (!id || !FILE_ID_PATTERN.test(id)) {
+    console.warn("[file-download] invalid-id", {
+      rawId,
+      normalizedId: id ?? null,
+    });
     throw createError({ statusCode: 400, statusMessage: "Invalid file id." });
   }
+
+  console.info("[file-download] starting", { fileId: id, rawId });
 
   try {
     const object = await getS3Client().send(
@@ -65,9 +72,16 @@ export default defineEventHandler(async (event) => {
       setHeader(event, "x-file-size", originalSize);
     }
 
+    console.info("[file-download] streaming", {
+      fileId: id,
+      contentLength: object.ContentLength ?? null,
+      originalSize: originalSize ?? null,
+    });
+
     return sendStream(event, toNodeReadableStream(object.Body));
   } catch (error) {
     if (error instanceof NoSuchKey) {
+      console.warn("[file-download] not-found", { fileId: id });
       throw createError({ statusCode: 404, statusMessage: "File not found." });
     }
 
@@ -75,12 +89,19 @@ export default defineEventHandler(async (event) => {
       const metadata = error.$metadata as { httpStatusCode?: number };
 
       if (metadata.httpStatusCode === 404) {
+        console.warn("[file-download] not-found", { fileId: id });
         throw createError({
           statusCode: 404,
           statusMessage: "File not found.",
         });
       }
     }
+
+    console.error("[file-download] failed", {
+      fileId: id,
+      rawId,
+      message: error instanceof Error ? error.message : String(error),
+    });
 
     throw createError({
       statusCode: 500,
