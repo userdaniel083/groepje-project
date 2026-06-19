@@ -7,6 +7,10 @@ const lastShareUrl = ref("");
 const { uploadFile, uploadProgress, isUploading, maxFileBytes, formatBytes } =
     useEncryptedFileShare();
 
+const normalizedUploadProgress = computed(() =>
+    Math.round(uploadProgress * 100),
+);
+
 async function handleUpload() {
     if (!selectedFile.value) {
         return;
@@ -69,9 +73,7 @@ async function copyShareLink() {
                     </span>
                 </div>
 
-                <div class="text-sm text-gray-600">
-                    Upload progress ref: {{ Math.round(uploadProgress * 100) }}%
-                </div>
+                <UProgress v-model="normalizedUploadProgress" />
 
                 <UAlert
                     v-if="errorMessage"
