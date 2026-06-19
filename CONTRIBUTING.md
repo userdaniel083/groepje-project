@@ -41,4 +41,41 @@ After installing it, run `fnm use 24` (the LTS version).
 
 ### install dependencies
 
-This project uses [pnpm](https://pnpm.io) to manage node modules. Why not npm?
+This project uses [pnpm](https://pnpm.io) to manage node modules. Why not npm? because npm sucks
+
+```bash
+npm i -g pnpm
+```
+
+ok with pnpm installed globally, install the dependencies.
+
+> [!NOTE]
+> The npm supply chain attack is an everyday story now. Why? Because npm for some reason blindly trusts extra install scripts when installing modules. pnpm does not. I've also set an option in the pnpm-workspace.yaml file that requires any package in this project to have an age of at least 24 hours, so you are pretty much safe (and also the project doesn't run on bleeding edge package versions anyways so why am I even telling you this)
+
+now just install the packages
+
+```bash
+pnpm install
+```
+
+and we're done! just kidding, run the dev environment. if the dev environment feels slow, switch to linux.
+
+```bash
+pnpm dev
+```
+
+done.
+
+### actually pentesting
+
+so like the dev environment is a lot less secure because, well, it's a development environment. to get an actual idea of how to exploit it, deploy it locally as a production app.
+
+we use nuxt for client and server.
+
+here's a guide: https://nuxt.com/docs/4.x/getting-started/deployment
+
+#### oh? and the s3 bucket
+
+please for the love of god, if you're using my bucket, don't spam it with files. it costs me real money.
+
+got it? awesome. onto breaking our lovely codebase.
