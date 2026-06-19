@@ -1,75 +1,22 @@
-# Nuxt Minimal Starter
+# Fileshare
+The filesharing tool that took security, reliability and scalability a bit too serious for this school project.
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+## Development
+Refer to [CONTRIBUTING.md](CONTRIBUTING.md)
 
-## Setup
+## Screenshots
+|  |  |
+|--|--|
+|![](/public/img/upload_screenshot.png) | ![](/public/img/download_screenshot.png) |
 
-Make sure to install dependencies:
+## Background
 
-```bash
-# npm
-npm install
+We had to build a file sharing tool for school, so we made the most overkill thing we could. It's encrypted as well, the admins can't see what files you upload\*
 
-# pnpm
-pnpm install
+\*except if they intercept traffic or modify the code
 
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+  - No sign-in
+  - Mininal logging
+  - Encrypted by the sender and recipient
+  - Files stored in S3
+  - All file types supported

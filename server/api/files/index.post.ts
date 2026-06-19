@@ -168,6 +168,12 @@ export default defineEventHandler(async (event) => {
     createLimitedStream(MAX_ENCRYPTED_BYTES),
   );
 
+  console.info("[file-upload] starting", {
+    fileId,
+    originalSize,
+    encryptedSize: contentLength ?? null,
+  });
+
   try {
     await getS3Client().send(
       new PutObjectCommand({
@@ -183,11 +189,25 @@ export default defineEventHandler(async (event) => {
         ServerSideEncryption: "AES256",
       }),
     );
+
+    console.info("[file-upload] complete", {
+      fileId,
+      originalSize,
+      encryptedSize: contentLength ?? null,
+    });
   } catch (error) {
     const statusCode =
       typeof error === "object" && error && "statusCode" in error
         ? Number(error.statusCode)
         : undefined;
+
+    console.error("[file-upload] failed", {
+      fileId,
+      originalSize,
+      encryptedSize: contentLength ?? null,
+      message: error instanceof Error ? error.message : String(error),
+      statusCode,
+    });
 
     if (statusCode === 413) {
       throw createError({
