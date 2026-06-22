@@ -26,6 +26,7 @@ function requestJson<T>(options: {
   body?: Document | XMLHttpRequestBodyInit | null;
   headers?: Record<string, string>;
   onUploadProgress?: (loaded: number, total: number) => void;
+  onError?: () => void;
 }) {
   return new Promise<T>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -47,21 +48,29 @@ function requestJson<T>(options: {
         try {
           resolve(JSON.parse(xhr.responseText) as T);
         } catch {
-          reject(new Error("Invalid server response."));
+          reject(() => {
+            options.onError?.();
+            return new Error("Invalid server response.");
+          });
         }
 
         return;
       }
 
-      reject(
-        new Error(
+      reject(() => {
+        options.onError?.();
+        return new Error(
           extractErrorMessage(xhr.responseText) ||
             `Request failed with ${xhr.status}.`,
-        ),
-      );
+        );
+      });
     };
 
-    xhr.onerror = () => reject(new Error("Network request failed."));
+    xhr.onerror = () =>
+      reject(() => {
+        options.onError?.();
+        return new Error("Network request failed.");
+      });
     xhr.send(options.body ?? null);
   });
 }
@@ -70,6 +79,7 @@ function requestBinary(options: {
   method: string;
   url: string;
   onDownloadProgress?: (loaded: number, total: number) => void;
+  onError?: () => void;
 }) {
   return new Promise<{ data: ArrayBuffer; headers: Record<string, string> }>(
     (resolve, reject) => {
@@ -92,15 +102,20 @@ function requestBinary(options: {
           return;
         }
 
-        reject(
-          new Error(
+        reject(() => {
+          options.onError?.();
+          return new Error(
             extractErrorMessage(getXhrErrorText(xhr)) ||
               `Request failed with ${xhr.status}.`,
-          ),
-        );
+          );
+        });
       };
 
-      xhr.onerror = () => reject(new Error("Network request failed."));
+      xhr.onerror = () =>
+        reject(() => {
+          options.onError?.();
+          return new Error("Network request failed.");
+        });
       xhr.send();
     },
   );
@@ -192,6 +207,9 @@ export function useEncryptedFileShare() {
         onUploadProgress: (loaded, total) => {
           uploadProgress.value = 0.35 + (total > 0 ? loaded / total : 0) * 0.65;
         },
+        onError: () => {
+          isUploading.value = false;
+        },
       });
 
       uploadProgress.value = 1;
@@ -229,6 +247,9 @@ export function useEncryptedFileShare() {
         url: `/api/files/${normalizedFileId}/download`,
         onDownloadProgress: (loaded, total) => {
           downloadProgress.value = (total > 0 ? loaded / total : 0) * 0.7;
+        },
+        onError: () => {
+          isDownloading.value = false;
         },
       });
 
