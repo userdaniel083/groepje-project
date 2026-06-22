@@ -77,7 +77,7 @@ export function getS3Client() {
             secretAccessKey: config.secretAccessKey,
           }
         : undefined,
+    requestStreamBufferSize: 65_536,  
   });
-
   return cachedClient;
 }
