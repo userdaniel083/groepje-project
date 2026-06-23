@@ -14,4 +14,9 @@ services:
       PORT: 6767
       NITRO_HOST: 0.0.0.0
       NITRO_PORT: 6767
+      NUXT_AWS_REGION: ${S3_REGION}
+      NUXT_AWS_S3_BUCKET: ${S3_BUCKET}
+      NUXT_AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      NUXT_AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      NUXT_AWS_S3_ENDPOINT: ${S3_ENDPOINT}
     restart: unless-stopped
