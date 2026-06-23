@@ -7,7 +7,7 @@ const lastShareUrl = ref("");
 const { uploadFile, uploadProgress, isUploading, maxFileBytes, formatBytes } =
     useEncryptedFileShare();
 
-const normalizedUploadProgress = computed(() =>
+const normalizeUploadProgress = computed(() =>
     Math.round(uploadProgress.value * 100),
 );
 
@@ -65,7 +65,7 @@ async function copyShareLink() {
                 </UButton>
             </div>
 
-            <UProgress v-if="isUploading" v-model="normalizedUploadProgress" />
+            <UProgress v-if="isUploading" v-model="normalizeUploadProgress" />
 
             <UAlert
                 v-if="errorMessage"
@@ -74,6 +74,9 @@ async function copyShareLink() {
                 title="Upload failed"
                 :description="errorMessage"
             />
+            <video v-if="errorMessage" autoplay="true">
+                <source src="/hij_doet_het_niet.webm" type="video/webm" />
+            </video>
 
             <UAlert
                 v-if="lastShareUrl"

@@ -6,6 +6,10 @@ const downloaded = ref(false);
 const { downloadFile, downloadProgress, isDownloading } =
     useEncryptedFileShare();
 
+const normalizeDownloadProgress = computed(() =>
+    Math.round(downloadProgress.value * 100),
+);
+
 function normalizeFileId(value: string) {
     const match = value
         .trim()
@@ -61,10 +65,10 @@ async function handleDownload() {
                     </p>
                 </div>
 
-                <div class="text-sm text-gray-600">
-                    Download progress ref:
-                    {{ Math.round(downloadProgress * 100) }}%
-                </div>
+                <UProgress
+                    v-if="isDownloading"
+                    v-model="normalizeDownloadProgress"
+                />
 
                 <UAlert
                     v-if="errorMessage"
@@ -73,6 +77,10 @@ async function handleDownload() {
                     title="Download failed"
                     :description="errorMessage"
                 />
+
+                <video v-if="errorMessage" autoplay="true">
+                    <source src="/hij_doet_het_niet.webm" type="video/webm" />
+                </video>
 
                 <UAlert
                     v-if="downloaded"

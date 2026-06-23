@@ -2,7 +2,11 @@
     <UApp>
         <NuxtLink to="/">
             <div class="fixed left-5 top-5 z-10">
-                <NuxtImg src="/img/logo.svg" class="h-7" />
+                <NuxtImg src="/img/logo.svg" class="h-7 dark:inline hidden" />
+                <NuxtImg
+                    src="/img/logo-alt.svg"
+                    class="h-7 light:inline hidden"
+                />
             </div>
         </NuxtLink>
         <div class="flex flex-col justify-center h-full fixed w-full">
