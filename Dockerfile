@@ -1,34 +1,25 @@
-# Build Stage 1
-
-FROM node:22-alpine AS build
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
 RUN corepack enable
 
-# Copy package.json and your lockfile, here we add pnpm-lock.yaml for illustration
-COPY package.json package-lock.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 
-# Install dependencies
-RUN pnpm i
+COPY . .
+RUN pnpm build
 
-# Copy the entire project
-COPY . ./
-
-# Build the project
-RUN pnpm run build
-
-# Build Stage 2
-
-FROM node:22-alpine
+FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 
-# Only `.output` folder is needed from the build stage
-COPY --from=build /app/.output/ ./
-
-# Change the port and host
-ENV PORT=6767
+ENV NODE_ENV=production
 ENV HOST=0.0.0.0
+ENV PORT=6767
+ENV NITRO_HOST=0.0.0.0
+ENV NITRO_PORT=6767
+
+COPY --from=build /app/.output ./.output
 
 EXPOSE 6767
 
-CMD ["node", "/app/server/index.mjs"]
+CMD ["node", ".output/server/index.mjs"]

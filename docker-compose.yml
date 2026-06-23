@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  fileshare:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "6767:6767"
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 6767
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: 6767
+    restart: unless-stopped
