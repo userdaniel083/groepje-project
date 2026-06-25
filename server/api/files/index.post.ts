@@ -3,6 +3,14 @@ import { createError, defineEventHandler, getHeader } from "h3";
 import { randomBytes } from "node:crypto";
 import { Transform } from "node:stream";
 import { getS3Bucket, getS3Client } from "../../utils/s3";
+import {
+  commitUploadQuota,
+  DAILY_UPLOAD_LIMIT_BYTES,
+  getRequestIpAddress,
+  releaseUploadQuota,
+  reserveUploadQuota,
+  UploadQuotaExceededError,
+} from "../../utils/upload-rate-limit";
 
 const MAX_FILE_BYTES = 1024 * 1024 * 1024;
 const MAX_ENCRYPTED_OVERHEAD_BYTES = 1024 * 1024;
@@ -167,11 +175,41 @@ export default defineEventHandler(async (event) => {
   const limitedStream = requestStream.pipe(
     createLimitedStream(MAX_ENCRYPTED_BYTES),
   );
+  const ip = getRequestIpAddress(event);
+  const accountedBytes = contentLength ?? originalSize;
+  let reservationId = "";
+  let remainingBytes = 0;
+
+  try {
+    const reservation = await reserveUploadQuota(ip, accountedBytes);
+    reservationId = reservation.reservationId;
+    remainingBytes = reservation.remainingBytes;
+  } catch (error) {
+    if (error instanceof UploadQuotaExceededError) {
+      console.warn("[file-upload] rate-limited", {
+        ip,
+        fileId,
+        accountedBytes,
+        usedBytes: error.usedBytes,
+        remainingBytes: Math.max(0, error.limitBytes - error.usedBytes),
+        limitBytes: DAILY_UPLOAD_LIMIT_BYTES,
+      });
+      throw createError({
+        statusCode: 429,
+        statusMessage: "Daily upload limit exceeded for this IP.",
+      });
+    }
+
+    throw error;
+  }
 
   console.info("[file-upload] starting", {
+    ip,
     fileId,
     originalSize,
     encryptedSize: contentLength ?? null,
+    accountedBytes,
+    remainingBytes,
   });
 
   try {
@@ -190,10 +228,15 @@ export default defineEventHandler(async (event) => {
       }),
     );
 
+    await commitUploadQuota(reservationId);
+
     console.info("[file-upload] complete", {
+      ip,
       fileId,
       originalSize,
       encryptedSize: contentLength ?? null,
+      accountedBytes,
+      remainingBytes,
     });
   } catch (error) {
     const statusCode =
@@ -201,10 +244,15 @@ export default defineEventHandler(async (event) => {
         ? Number(error.statusCode)
         : undefined;
 
+    await releaseUploadQuota(reservationId);
+
     console.error("[file-upload] failed", {
+      ip,
       fileId,
       originalSize,
       encryptedSize: contentLength ?? null,
+      accountedBytes,
+      remainingBytes,
       message: error instanceof Error ? error.message : String(error),
       statusCode,
     });
